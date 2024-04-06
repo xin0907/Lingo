@@ -34,7 +34,7 @@ export const upsertUserProgress = async (courseId: number) => {
         // 用于重新验证指定路径的数据
         revalidatePath("/courses");
         revalidatePath("/learn");
-        redirect(" / learn");
+        redirect("/learn");
     }
 
     // 新增一条学习进度
@@ -47,5 +47,5 @@ export const upsertUserProgress = async (courseId: number) => {
 
     revalidatePath("/courses");
     revalidatePath("/learn");
-    redirect(" / learn");
+    redirect("/learn");
 }
