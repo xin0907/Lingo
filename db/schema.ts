@@ -1,22 +1,104 @@
 import { relations } from "drizzle-orm";
-import { serial, pgTable, text, integer } from "drizzle-orm/pg-core";
+import { serial, pgTable, text, integer, pgEnum, boolean } from "drizzle-orm/pg-core";
 
-// serial 会自动递增
+// 课程表
 export const courses = pgTable("courses", {
     id: serial("id").primaryKey(),
     title: text("title").notNull(),
-    imageSrc: text("image_src").notNull()
-})
+    imageSrc: text("image_src").notNull(),
+});
 
 export const coursesRelations = relations(courses, ({ many }) => ({
     userProgress: many(userProgress),
+    units: many(units)
+}))
+
+// 单元表
+export const units = pgTable("units", {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    courseId: integer("course id").references(() => courses.id, { onDelete: "cascade" }).notNull(),
+    order: integer("order").notNull()
+})
+
+export const unitsRelations = relations(units, ({ many, one }) => ({
+    course: one(courses, {
+        fields: [units.courseId],
+        references: [courses.id]
+    }),
+    lessons: many(lessons)
+}));
+
+// 课时表
+export const lessons = pgTable("lessons", {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    unitId: integer("unit id").references(() => units.id, { onDelete: "cascade" }).notNull(),
+    order: integer("order").notNull()
+})
+
+export const lessonsRelations = relations(lessons, ({ one, many }) => ({
+    unit: one(units, {
+        fields: [lessons.unitId],
+        references: [units.id]
+    }),
+    challenges: many(challenges)
+}))
+
+// 挑战表
+export const challengesEnum = pgEnum("type", ['SELECT', 'ASSIST']);
+export const challenges = pgTable("challenges", {
+    id: serial("id").primaryKey(),
+    lessonId: integer("lesson_id").references(() => lessons.id, { onDelete: "cascade" }).notNull(),
+    type: challengesEnum("type").notNull(),
+    question: text("question").notNull(),
+    order: integer("order").notNull()
+})
+export const challengesRelations = relations(challenges, ({ one, many }) => ({
+    lesson: one(lessons, {
+        fields: [challenges.lessonId],
+        references: [lessons.id]
+    }),
+    challengeOptions: many(challengeOptions),
+    challengeProgress: many(challengeProgress)
+}))
+
+// 挑战信息表
+export const challengeOptions = pgTable("challenge_options", {
+    id: serial("id").primaryKey(),
+    challengeId: integer("challenge_id").references(() => challenges.id, { onDelete: "cascade" }).notNull(),
+    text: text("text").notNull(),
+    correct: boolean("correct").notNull(),
+    imageSrc: text("image_src"),
+    audioSrc: text("audio_src")
+})
+export const challengeOptionsRelations = relations(challengeOptions, ({ one }) => ({
+    challenge: one(challenges, {
+        fields: [challengeOptions.challengeId],
+        references: [challenges.id]
+    })
+}))
+
+// 挑战进度表
+export const challengeProgress = pgTable("challenge_progress", {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    challengeId: integer("challenge_id").references(() => challenges.id, { onDelete: "cascade" }).notNull(),
+    completed: boolean("completed").notNull().default(false)
+})
+export const challengeProgressRelations = relations(challengeProgress, ({ one }) => ({
+    challenge: one(challenges, {
+        fields: [challengeProgress.challengeId],
+        references: [challenges.id]
+    })
 }))
 
 export const userProgress = pgTable("user_progress", {
-    userId: text("user id").primaryKey(),
-    userName: text("user name").notNull().default("User"),
-    userImageSrc: text("user image src").notNull().default("/mascot.svg"),
-    activeCourseId: integer("active course id").references(() => courses.id, { onDelete: "cascade" }),
+    userId: text("user_id").primaryKey(),
+    userName: text("user_name").notNull().default("User"),
+    userImageSrc: text("user_image_src").notNull().default("/mascot.svg"),
+    activeCourseId: integer("active_course_id").references(() => courses.id, { onDelete: "cascade" }),
     hearts: integer("hearts").notNull().default(5),
     points: integer("points").notNull().default(0)
 })
