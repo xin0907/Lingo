@@ -63,7 +63,7 @@ export const LessonButton = ({
                             />
                         </div>
                         <CircularProgressbarWithChildren
-                            value={0}
+                            value={percentage}
                             styles={{
                                 path: {
                                     stroke: "#4ade80"
