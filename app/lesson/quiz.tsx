@@ -11,14 +11,15 @@ import { QuestionBubble } from "./question-bubble"
 
 import Image from "next/image"
 import { toast } from "sonner"
-import { useAudio, useWindowSize } from "react-use"
+import Confetti from "react-confetti"
+import { useRouter } from "next/navigation"
+import { useAudio, useWindowSize, useMount } from "react-use"
 
 import { reduceHearts } from "@/actions/user-progress"
 import { upsertChallengeProgress } from "@/actions/challenge-progress"
 
-import { useRouter } from "next/navigation"
-
-import Confetti from "react-confetti"
+import { useHeartsModal } from "@/store/use-hearts-modal"
+import { usePracticeModal } from "@/store/use-practice-modal"
 
 type Props = {
     initialPercentage: number;
@@ -39,6 +40,15 @@ export const Quiz = ({
     userSubscription
 }: Props) => {
     // 得到屏幕的宽高
+    const { open: openHeartsModal } = useHeartsModal()
+    const { open: openPracticeModal } = usePracticeModal()
+
+    useMount(() => {
+        if (initialPercentage === 100) {
+            openPracticeModal()
+        }
+    })
+
     const { width, height } = useWindowSize()
     const router = useRouter()
 
@@ -50,7 +60,11 @@ export const Quiz = ({
 
     const [lessonId, setLessonId] = useState(initialLessonId)
     const [hearts, setHearts] = useState(initialHearts)
-    const [percentage, setPercentage] = useState(initialPercentage)
+
+    // 处理：已完成的挑战重新进行时的进度显示
+    const [percentage, setPercentage] = useState(() => {
+        return initialPercentage === 100 ? 0 : initialPercentage
+    })
     const [challenges] = useState(initialLessonChallenges);
 
     // 找到当前的挑战
@@ -98,7 +112,7 @@ export const Quiz = ({
                 upsertChallengeProgress(challenge.id)
                     .then(res => {
                         if (res?.error === "hearts") {
-                            console.error("Missing hearts")
+                            openHeartsModal()
                             return
                         }
 
@@ -117,7 +131,7 @@ export const Quiz = ({
                 reduceHearts(challenge.id)
                     .then((res) => {
                         if (res?.error === "hearts") {
-                            console.error("Missing hearts")
+                            openHeartsModal()
                             return
                         }
 
@@ -133,7 +147,7 @@ export const Quiz = ({
     }
 
     // 当前挑战列表没有挑战了
-    if (true || !challenge) {
+    if (!challenge) {
         return (
             <>
                 {finishAudio}
