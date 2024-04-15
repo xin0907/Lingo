@@ -10,6 +10,7 @@ import { challengeProgress, challenges, userProgress } from "@/db/schema"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+const POINTS_TO_REFILL = 10
 export const upsertUserProgress = async (courseId: number) => {
     const { userId } = await auth()
     const user = await currentUser()
@@ -86,4 +87,23 @@ export const reduceHearts = async (challengeId: number) => {
     revalidatePath("/quests");
     revalidatePath("/leaderboard");
     revalidatePath(`/lesson/${lessonId}`);
+}
+
+// 处理：购买爱心后恢复爱心到满
+export const refillHearts = async () => {
+    const currentUserProgress = await getUserProgress()
+
+    if (!currentUserProgress) throw new Error("User progress not found!")
+    if (currentUserProgress.hearts === 5) throw new Error("Hearts are alread full")
+    if (currentUserProgress.points < POINTS_TO_REFILL) throw new Error("Not enough points")
+
+    await db.update(userProgress).set({
+        hearts: 5,
+        points: currentUserProgress.points - POINTS_TO_REFILL
+    }).where(eq(userProgress.userId, currentUserProgress.userId))
+
+    revalidatePath("/shop");
+    revalidatePath("/learn");
+    revalidatePath("/quests");
+    revalidatePath("/leaderboard");
 }
