@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs";
 
 import db from "@/db/drizzle";
-import { challengeProgress, courses, lessons, units, userProgress } from "@/db/schema";
+import { challengeProgress, courses, lessons, units, userProgress, userSubscription } from "@/db/schema";
 
 export const getCourses = cache(async () => {
     const data = await db.query.courses.findMany()
@@ -181,3 +181,27 @@ export const getLessonPercentage = cache(async () => {
 
     return percentage;
 });
+
+// 订阅 stripe
+// 一天的毫秒数
+const DAY_IN_MS = 86_400_000
+export const getUserSubscription = cache(async () => {
+    const { userId } = await auth()
+
+    if (!userId) return null
+
+    const data = await db.query.userSubscription.findFirst({
+        where: eq(userSubscription.userId, userId)
+    })
+
+    if (!data) return null
+    // 判断用户订阅是否还有效
+    // 计算了用户订阅的当前周期结束时间加上一天的毫秒数是否大于当前时间，有一定的缓冲
+    const isActive = data.stripePriceId &&
+        data.stripeCurrentPeriodEnd?.getTime() + DAY_IN_MS > Date.now()
+
+    return {
+        ...data,
+        isActive: !!isActive
+    }
+})
