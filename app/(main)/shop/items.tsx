@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { refillHearts } from "@/actions/user-progress";
 import { createStripeUrl } from "@/actions/user-subscription";
 
-const POINTS_TO_REFILL = 10
+import { POINTS_TO_REFILL } from "@/constants";
 
 type Props = {
     hearts: number;

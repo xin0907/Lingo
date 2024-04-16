@@ -1,7 +1,7 @@
 // 实现：点击已完成的挑战，可以进行挑战
 import { redirect } from "next/navigation";
 
-import { getLesson, getUserProgress } from "@/db/queries";
+import { getLesson, getUserProgress, getUserSubscription } from "@/db/queries";
 
 import { Quiz } from "../quiz";
 
@@ -16,16 +16,16 @@ const LessonIdPage = async ({
 }: Props) => {
     const lessonData = getLesson(params.lessonId);
     const userProgressData = getUserProgress();
-    // const userSubscriptionData = getUserSubscription();
+    const userSubscriptionData = getUserSubscription();
 
     const [
         lesson,
         userProgress,
-        // userSubscription,
+        userSubscription,
     ] = await Promise.all([
         lessonData,
         userProgressData,
-        // userSubscriptionData,
+        userSubscriptionData,
     ]);
 
     if (!lesson || !userProgress) {
@@ -42,7 +42,7 @@ const LessonIdPage = async ({
             initialLessonChallenges={lesson.challenges}
             initialHearts={userProgress.hearts}
             initialPercentage={initialPercentage}
-            userSubscription={null}
+            userSubscription={userSubscription}
         />
     );
 };

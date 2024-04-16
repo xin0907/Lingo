@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@clerk/nextjs"
-import { getUserProgress } from "@/db/queries"
+import { getUserProgress, getUserSubscription } from "@/db/queries"
 
 import db from "@/db/drizzle"
 import { and, eq } from "drizzle-orm"
@@ -15,6 +15,7 @@ export const upsertChallengeProgress = async (challengeId: number) => {
     if (!userId) throw new Error("Unauthorized")
 
     const currentUserProgress = await getUserProgress()
+    const userSubscription = await getUserSubscription()
 
     if (!currentUserProgress) throw new Error("User progress not found")
 
@@ -31,10 +32,14 @@ export const upsertChallengeProgress = async (challengeId: number) => {
             eq(challengeProgress.challengeId, challengeId)
         )
     })
-    // 用户是否已经开始挑战？
+
     const isPractice = !!existingChallengeProgress
-    // 判断还有没有心
-    if (currentUserProgress.hearts === 0 && !isPractice) return { error: "hearts" }
+    // 有无心 + 是否开始挑战 + 是否已订阅
+    if (currentUserProgress.hearts === 0
+        && !isPractice
+        && !userSubscription?.isActive
+    ) return { error: "hearts" }
+
     // 这一行代码更新了数据库中的挑战进度记录，将其标记为已完成。它使用了 db.update() 方法来更新数据，指定了更新的字段（这里是 completed）和更新条件（这里是根据进度记录的ID来更新）。
     if (isPractice) {
         await db.update(challengeProgress).set({
