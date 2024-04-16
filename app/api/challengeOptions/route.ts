@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 
 import db from "@/db/drizzle";
-import { courses } from "@/db/schema";
+
+import { challengeOptions } from "@/db/schema";
 import { isAdmin } from "@/lib/admin";
 
-// admin courses 的 api
-// 可能会遇到跨域问题，去 next.config.msj 修改
 export const GET = async () => {
     if (!isAdmin()) return new NextResponse("Unauthorized", { status: 401 })
 
-    const data = await db.query.courses.findMany()
+    const data = await db.query.challengeOptions.findMany()
     return NextResponse.json(data)
 }
 
@@ -18,7 +17,7 @@ export const POST = async (req: Request) => {
 
     const body = await req.json()
 
-    const data = await db.insert(courses).values({
+    const data = await db.insert(challengeOptions).values({
         ...body
     }).returning()
 
